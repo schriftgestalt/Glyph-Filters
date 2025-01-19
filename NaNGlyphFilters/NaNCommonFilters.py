@@ -70,7 +70,7 @@ def spikes(thislayer, outlinedata, minpush, maxpush, minstep, maxstep, drawFunct
             if direction == Direction.ANTICLOCKWISE:
                 step = random.randrange(minstep, maxstep)
             else:
-                step = random.randrange(minstep, maxstep / 2)
+                step = random.randrange(minstep, maxstep // 2)
 
             if n + step >= nodelen - 1:
                 break
