@@ -6,7 +6,7 @@ Burned
 import random
 
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import convertToFitpath, ClearPaths, AddAllPathsToLayer, AllPathBounds, RoundPaths
+from NaNGFGraphikshared import ClearPaths, AddAllPathsToLayer, AllPathBounds, RoundPaths
 from NaNFilter import NaNFilter
 from NaNGFSpacePartition import BreakUpSpace
 from NaNGlyphsEnvironment import glyphsEnvironment as G

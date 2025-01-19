@@ -84,12 +84,12 @@ class Lines(NaNFilter):
 
 		lines = SnapToGrid(lines, self.strokesize)
 
-		for l in lines:
-			if l[0] == l[-1]:
+		for line in lines:
+			if line[0] == line[-1]:
 				continue
 			comp = returnLineComponent(
-				l[0],
-				l[-1],
+				line[0],
+				line[-1],
 				direction,
 				[self.line_vertical_comp, self.line_horizontal_comp],
 				100,

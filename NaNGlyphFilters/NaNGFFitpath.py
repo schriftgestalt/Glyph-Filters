@@ -12,7 +12,7 @@ Modifications and optimisations of original algorithm by Juerg Lehni.
 Ported by Gumble, 2015.
 """
 # from NaNGlyphsEnvironment import glyphsEnvironment as G
-from NaNGlyphsEnvironment import GSPath, GSNode, GSCURVE, GSOFFCURVE, GSLINE
+# from NaNGlyphsEnvironment import GSPath, GSNode, GSCURVE, GSOFFCURVE, GSLINE
 import math
 
 TOLERANCE = 10e-6
@@ -170,9 +170,9 @@ class PathFitter:
 	def __init__(self, segments, error=2.5):
 		self.points = []
 		# Copy over points from path and filter out adjacent duplicates.
-		l = len(segments)
+		length = len(segments)
 		prev = None
-		for i in range(l):
+		for i in range(length):
 			point = segments[i].point.copy()
 			if prev != point:
 				self.points.append(point)
@@ -244,9 +244,9 @@ class PathFitter:
 		C = [[0, 0], [0, 0]]
 		X = [0, 0]
 
-		l = last - first + 1
+		length = last - first + 1
 
-		for i in range(l):
+		for i in range(length):
 			u = uPrime[i]
 			t = 1 - u
 			b = 3 * u * t

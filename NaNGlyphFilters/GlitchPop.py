@@ -160,10 +160,10 @@ class GlitchPop(NaNFilter):
 					print(direction, x2, y2)
 					add_line(x2, y2)
 
-		for l in lines:
+		for line in lines:
 			comp = returnLineComponent(
-				l[0],
-				l[-1],
+				line[0],
+				line[-1],
 				direction,
 				[self.line_vertical_comp, self.line_horizontal_comp],
 				100,
