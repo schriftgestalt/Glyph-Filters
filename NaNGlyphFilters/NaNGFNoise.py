@@ -94,6 +94,3 @@ def NoiseOutline(thislayer, outlinedata, noisevars=[0.03, 0, 20]):
 		noisepaths.append(p)
 
 	return noisepaths
-
-
-
