@@ -6,7 +6,7 @@ Burned
 import random
 
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import convertToFitpath, ClearPaths, AddAllPathsToLayer, AllPathBounds, RoundPath
+from NaNGFGraphikshared import convertToFitpath, ClearPaths, AddAllPathsToLayer, AllPathBounds, RoundPaths
 from NaNFilter import NaNFilter
 from NaNGFSpacePartition import BreakUpSpace
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -50,7 +50,7 @@ class Burn(NaNFilter):
 				G.add_paths(thislayer, g)
 
 		G.remove_overlap(thislayer)
-		roundedpathlist = returnRoundedPaths(thislayer.paths)
+		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
 		AddAllPathsToLayer(roundedpathlist, thislayer)
 		self.CleanOutlines(

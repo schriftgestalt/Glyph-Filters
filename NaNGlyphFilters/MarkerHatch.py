@@ -7,7 +7,7 @@ Marker Hatch
 import copy
 import random
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, drawSimplePath, point_inside_polygon, retractHandles, returnRoundedPaths
+from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, drawSimplePath, point_inside_polygon, retractHandles, RoundPaths
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGFConfig import glyphSize
 from NaNFilter import NaNFilter
@@ -35,7 +35,7 @@ class Shatter(NaNFilter):
 
 	def processLayerSmall(self, thislayer, params):
 		paths = copy.copy(thislayer.paths)
-		rounded = returnRoundedPaths(paths)
+		rounded = RoundPaths(paths)
 		ClearPaths(thislayer)
 		AddAllPathsToLayer(rounded, thislayer)
 		# retractHandles(thislayer)
@@ -62,7 +62,7 @@ class Shatter(NaNFilter):
 					d = random.randrange(maxshift * -1, 0)
 				self.shufflePaths(row, d)
 			n += 1
-			rounded = returnRoundedPaths(row)
+			rounded = RoundPaths(row)
 
 			AddAllPathsToLayer(rounded, thislayer)
 			retractHandles(thislayer)

@@ -29,7 +29,6 @@ __all__ = [
 	"AllPathBounds",
 	"RoundPaths",
 	"RoundPath",
-	"returnRoundedPaths",
 	"clip",
 	"convertToFitpath",
 	"drawBlob",
@@ -285,7 +284,7 @@ def AllPathBounds(thislayer):
 #   SHAPES
 #
 
-def RoundPaths(paths, returntype):
+def RoundPaths(paths, returntype="nodes"):
 	newpaths = []
 	for p in paths:
 		newpaths.append(RoundPath(p, returntype))
@@ -338,16 +337,6 @@ def RoundPath(path, returntype):
 		return new_outline
 	else:
 		return path
-
-
-def returnRoundedPaths(paths):
-
-	roundedpathlist = []
-	for p in paths:
-		roundedpath = RoundPath(p, "nodes")
-		roundedpath = convertToFitpath(roundedpath, True)
-		roundedpathlist.append(roundedpath)
-	return roundedpathlist
 
 
 def clip(val, minimum, maximum):

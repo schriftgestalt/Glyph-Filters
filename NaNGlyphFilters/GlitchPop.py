@@ -6,9 +6,8 @@ Glitch Pop
 
 import math
 import random
-from Burned import returnRoundedPaths
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, CreateLineComponent, Fill_Drawlines, RoundPath, drawCircle, drawTriangle, point_inside_polygon, returnLineComponent, convertToFitpath
+from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, CreateLineComponent, Fill_Drawlines, RoundPath, drawCircle, drawTriangle, point_inside_polygon, returnLineComponent, convertToFitpath, RoundPaths
 from NaNGFSpacePartition import BreakUpSpace, PathToNodeList
 from NaNGlyphsEnvironment import GSLayer
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -69,7 +68,7 @@ class GlitchPop(NaNFilter):
 
 	def processLayerSmall(self, thislayer):
 		G.remove_overlap(thislayer)
-		roundedpathlist = returnRoundedPaths(thislayer.paths)
+		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
 		AddAllPathsToLayer(roundedpathlist, thislayer)
 

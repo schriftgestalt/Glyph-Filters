@@ -11,7 +11,7 @@ import random
 from noise import snoise2
 from math import sin, cos, degrees, radians
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, ShiftAllPaths, point_inside_polygon, returnRoundedPaths
+from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, ShiftAllPaths, point_inside_polygon, RoundPaths
 from NaNGFNoise import noiseMap
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGlyphsEnvironment import GSPath, GSNode, GSLINE
@@ -43,7 +43,7 @@ class SeaCamouflage(NaNFilter):
 
 	def processLayerSmall(self, thislayer):
 		G.remove_overlap(thislayer)
-		roundedpathlist = returnRoundedPaths(thislayer.paths)
+		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
 		AddAllPathsToLayer(roundedpathlist, thislayer)
 

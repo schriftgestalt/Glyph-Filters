@@ -7,7 +7,7 @@ Maps
 import random
 from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
 from NaNGFConfig import glyphSize
-from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, ConvertPathDirection, CreateLineComponent, Fill_Drawlines, RoundPath, returnRoundedPaths, convertToFitpath
+from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, ConvertPathDirection, CreateLineComponent, Fill_Drawlines, RoundPaths, RoundPath, convertToFitpath
 from NaNGFSpacePartition import BreakUpSpace
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGlyphsEnvironment import GSLayer
@@ -70,7 +70,7 @@ class Maps(NaNFilter):
 
 	def processLayerSmall(self, thislayer):
 		G.remove_overlap(thislayer)
-		roundedpathlist = returnRoundedPaths(thislayer.paths)
+		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
 		AddAllPathsToLayer(roundedpathlist, thislayer)
 
