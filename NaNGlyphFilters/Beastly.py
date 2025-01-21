@@ -5,8 +5,8 @@ Beastly
 """
 
 from NaNGlyphsEnvironment import GSNode, GSOFFCURVE, GSCURVE
-from NaNGFGraphikshared import ClearPaths, AddAllPathsToLayer
-from NaNGFAngularizzle import setGlyphCoords, ConvertPathsToSkeleton
+from NaNGFGraphikshared import ClearPaths, AddPaths
+from NaNGFAngularizzle import getListOfPoints, ConvertPathsToLineSegments
 from NaNFilter import NaNFilter
 from NaNCommonFilters import spikes
 import random
@@ -64,15 +64,13 @@ class Fur(NaNFilter):
 		offsetpaths = self.saveOffsetPaths(
 			thislayer, params["offset"], params["offset"], removeOverlap=False
 		)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		outlinedata = getListOfPoints(pathlist)
 
 		ClearPaths(thislayer)
 
-		spikepaths = spikes(
-			thislayer, outlinedata, params["minfur"], params["maxfur"], 5, 20, drawHair
-		)
-		AddAllPathsToLayer(spikepaths, thislayer)
+		spikepaths = spikes(outlinedata, params["minfur"], params["maxfur"], 5, 20, drawHair)
+		AddPaths(spikepaths, thislayer)
 
 
 Fur()

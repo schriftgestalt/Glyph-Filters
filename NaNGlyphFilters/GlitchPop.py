@@ -6,8 +6,8 @@ Glitch Pop
 
 import math
 import random
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, CreateLineComponent, Fill_Drawlines, RoundPath, drawCircle, drawTriangle, point_inside_polygon, returnLineComponent, convertToFitpath, RoundPaths
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import AddComponents, AddPaths, AllPathBounds, ClearPaths, CreateLineComponent, Fill_Drawlines, RoundPath, drawCircle, drawTriangle, point_inside_polygon, returnLineComponent, convertToFitpath, RoundPaths
 from NaNGFSpacePartition import BreakUpSpace, PathToNodeList
 from NaNGlyphsEnvironment import GSLayer
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -19,9 +19,9 @@ from NaNFilter import NaNFilter
 class GlitchPop(NaNFilter):
 
 	params = {
-		"S": {"offset": 0, "gridsize": 10},
-		"M": {"offset": 4, "gridsize": 30},
-		"L": {"offset": 4, "gridsize": 40},
+		"S": {"gridsize": 10},
+		"M": {"gridsize": 30},
+		"L": {"gridsize": 40},
 	}
 
 	def setup(self):
@@ -41,26 +41,19 @@ class GlitchPop(NaNFilter):
 			self.processLayerLarge(thislayer, params)
 
 	def processLayerLarge(self, thislayer, params):
-		offset, gridsize = params["offset"], params["gridsize"]
-		pathlist = ConvertPathsToSkeleton(thislayer.paths, 20)
-		outlinedata = setGlyphCoords(pathlist)
+		gridsize = params["gridsize"]
+		pathlist = ConvertPathsToLineSegments(thislayer.paths, 20)
+		outlinedata = getListOfPoints(pathlist)
 		bounds = AllPathBounds(thislayer)
-
-		offsetpaths = self.saveOffsetPaths(
-			thislayer, offset, offset, removeOverlap=True
-		)
-		pathlist2 = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata2 = setGlyphCoords(pathlist2)
-		# bounds2 = AllPathBoundsFromPathList(pathlist2)
 
 		ClearPaths(thislayer)
 
 		maxchain = 150
 
 		newtris = self.SortCollageSpace(
-			thislayer, outlinedata, outlinedata2, gridsize, bounds, "stick"
+			thislayer, outlinedata, gridsize, bounds, "stick"
 		)
-		groups = BreakUpSpace(thislayer, outlinedata, newtris, gridsize, maxchain)
+		groups = BreakUpSpace(thislayer, newtris, gridsize, maxchain)
 		self.ApplyGlitchCollage(thislayer, groups, self.linecomponents)
 
 		G.remove_overlap(thislayer)
@@ -70,7 +63,7 @@ class GlitchPop(NaNFilter):
 		G.remove_overlap(thislayer)
 		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(roundedpathlist, thislayer)
+		AddPaths(roundedpathlist, thislayer)
 
 	def ApplyGlitchCollage(self, layer, groups, linecomponents):
 
@@ -108,7 +101,7 @@ class GlitchPop(NaNFilter):
 
 						if nodelen > 20:
 							noodlepaths = self.expandMonolineFromPathlist([roundedpath], 6)
-							AddAllPathsToLayer(noodlepaths, layer)
+							AddPaths(noodlepaths, layer)
 						else:
 
 							if random.choice([0, 1]) == 0:
@@ -120,7 +113,7 @@ class GlitchPop(NaNFilter):
 
 								linetype = not linetype
 								linecomps = Fill_Drawlines(layer, roundedpath, direction, 15, linecomponents)
-								AddAllComponentsToLayer(linecomps, layer)
+								AddComponents(linecomps, layer)
 
 							else:
 								self.Fill_Halftone(layer, roundedpath, "circle")

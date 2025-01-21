@@ -4,9 +4,8 @@ __doc__ = """
 Maze
 """
 
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
 from NaNGFConfig import ContainsPaths
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, ShapeWithinOutlines, drawTriangle
+from NaNGFGraphikshared import AddPaths, AllPathBounds, ClearPaths, ShapeWithinOutlines, drawTrianglePoints
 from NaNGlyphsEnvironment import GSNode, GSLINE, GSPath
 from NaNFilter import NaNFilter
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -29,8 +28,8 @@ class Maze(NaNFilter):
 			offsetpaths = self.saveOffsetPaths(
 				thislayer, offset, offset, removeOverlap=False
 			)
-			pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-			outlinedata = setGlyphCoords(pathlist)
+
+			outlinedata = G.outline_data_for_hit_testing(offsetpaths)
 
 			bounds = AllPathBounds(thislayer)
 			self.setupChecker(bounds)
@@ -39,7 +38,7 @@ class Maze(NaNFilter):
 			ClearPaths(thislayer)
 
 			walkpaths = self.walkerLoop(thislayer)
-			AddAllPathsToLayer(walkpaths, thislayer)
+			AddPaths(walkpaths, thislayer)
 
 			self.expandMonoline(thislayer, 6)
 			G.remove_overlap(thislayer)
@@ -66,16 +65,9 @@ class Maze(NaNFilter):
 			for stepx in range(0, self.xsteps + 3, 1):
 
 				x = self.ox + (stepx * self.unit)
-				shapepath = []
 				nx, ny = x + self.unit / 2, y + self.unit / 2
-				shape = drawTriangle(nx, ny, 6, 6)
-				shapepath.append(shape)
-
-				nshape = ConvertPathsToSkeleton(shapepath, 10)
-				nshape = setGlyphCoords(nshape)
-				finalshape = nshape[0][1]
-
-				if ShapeWithinOutlines(finalshape, outlinedata):
+				trianglePoints = drawTrianglePoints(nx, ny, 6, 6)
+				if ShapeWithinOutlines(trianglePoints, outlinedata):
 					self.checker[stepy][stepx] = True
 					self.available_slots.append([stepx, stepy])
 				else:

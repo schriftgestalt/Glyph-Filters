@@ -1,8 +1,40 @@
 from NaNGFGraphikshared import AllPathBounds, withinGlyphBlack, drawCircle, ShapeWithinOutlines, drawBlob, MakeVector, DistanceToNextBlack
 from NaNGlyphsEnvironment import GSPath
-from NaNGFAngularizzle import Direction, setGlyphCoords, ConvertPathsToSkeleton
+from NaNGFAngularizzle import Direction
 import random
 import math
+
+
+def generate_circle_polygon(center, radius, segment_length):
+	"""
+	Generates a polygon of points on a circle.
+
+	Parameters:
+		center (tuple): The (x, y) coordinates of the circle's center.
+		radius (float): The radius of the circle.
+		segment_length (float): The desired length of each segment.
+
+	Returns:
+		list: A list of (x, y) tuples representing the points on the circle.
+	"""
+	# Calculate the circumference of the circle
+	circumference = 2 * math.pi * radius
+
+	# Determine the number of points
+	num_points = math.ceil(circumference / segment_length)
+
+	# Calculate the angle step between points
+	angle_step = (2 * math.pi) / num_points
+
+	# Generate the points
+	points = []
+	for i in range(num_points):
+		angle = i * angle_step
+		x = center[0] + radius * math.cos(angle)
+		y = center[1] + radius * math.sin(angle)
+		points.append((x, y))
+
+	return points
 
 
 def moonrocks(thislayer, outlinedata, iterations, shapetype="blob", maxgap=8, maxsize=250):
@@ -34,11 +66,9 @@ def moonrocks(thislayer, outlinedata, iterations, shapetype="blob", maxgap=8, ma
 
 		if not inside:
 			continue
-		circle = drawCircle(x, y, rad * 2, rad * 2)
-		circlea = setGlyphCoords(ConvertPathsToSkeleton([circle], 10))
-		circlecoords = circlea[0][1]
 
-		if ShapeWithinOutlines(circlecoords, outlinedata):
+		circlecoords2 = generate_circle_polygon((x, y), rad, 10)
+		if ShapeWithinOutlines(circlecoords2, outlinedata):
 			list_dots.append([x, y, rad])
 
 	# print("Number of circles found:", len(list_dots))
@@ -55,7 +85,7 @@ def moonrocks(thislayer, outlinedata, iterations, shapetype="blob", maxgap=8, ma
 	return rocks
 
 
-def spikes(thislayer, outlinedata, minpush, maxpush, minstep, maxstep, drawFunction):
+def spikes(outlinedata, minpush, maxpush, minstep, maxstep, drawFunction):
 
 	spikepaths = []
 
@@ -89,9 +119,7 @@ def spikes(thislayer, outlinedata, minpush, maxpush, minstep, maxstep, drawFunct
 			pushdist = random.randrange(minpush, maxpush)
 
 			linex, liney = MakeVector(pushdist, a)
-
-			searchblack = DistanceToNextBlack(thislayer, [x1, y1], [x2, y2], outlinedata, 200)
-
+			searchblack = DistanceToNextBlack([x1, y1], [x2, y2], outlinedata, 200)
 			if direction == Direction.CLOCKWISE:
 				linex *= 0.7
 				liney *= 0.7
@@ -104,7 +132,7 @@ def spikes(thislayer, outlinedata, minpush, maxpush, minstep, maxstep, drawFunct
 
 			midx += linex
 			midy += liney
-
+			# if searchblack:
 			drawFunction(spike, x1, y1, midx, midy, x2, y2, pushdist)
 
 		spike.closed = True

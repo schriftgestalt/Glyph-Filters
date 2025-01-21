@@ -5,8 +5,8 @@ Vinyl
 """
 
 import random
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, ClearPaths, DoShadow, RoundPaths, convertToFitpath
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import AddPaths, ClearPaths, DoShadow, RoundPaths, convertToFitpath
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 
 from NaNFilter import NaNFilter
@@ -15,31 +15,21 @@ from NaNFilter import NaNFilter
 class Vinyl(NaNFilter):
 
 	params = {
-		"S": {"offset": 10, "it": 5, "depthmin": 20, "depthmax": 65},
-		"M": {"offset": 10, "it": 5, "depthmin": 25, "depthmax": 75},
-		"L": {"offset": 10, "it": 5, "depthmin": 30, "depthmax": 85}
+		"S": {"it": 5, "depthmin": 20, "depthmax": 65},
+		"M": {"it": 5, "depthmin": 25, "depthmax": 75},
+		"L": {"it": 5, "depthmin": 30, "depthmax": 85}
 	}
 	glyph_stroke_width = 16
 	shadow_stroke_width = 6
 	angle = -160  # random.randrange(0, 360)
 
-	def setup(self):
-		pass
-
 	def processLayer(self, thislayer, params):
 
-		offset, it, depthmin, depthmax = params["offset"], params["it"], params["depthmin"], params["depthmax"]
+		it, depthmin, depthmax = params["it"], params["depthmin"], params["depthmax"]
 
 		G.remove_overlap(thislayer)
-		pathlist = ConvertPathsToSkeleton(thislayer.paths, 10)
-		outlinedata = setGlyphCoords(pathlist)
-		# bounds = AllPathBounds(thislayer)
-
-		# offsetpaths = self.saveOffsetPaths(
-		# 	thislayer, offset, offset, removeOverlap=True
-		# )
-		# pathlist2 = ConvertPathsToSkeleton(offsetpaths, 4)
-		# outlinedata2 = setGlyphCoords(pathlist2)
+		pathlist = ConvertPathsToLineSegments(thislayer.paths, 10)
+		outlinedata = getListOfPoints(pathlist)
 
 		ClearPaths(thislayer)
 
@@ -48,7 +38,7 @@ class Vinyl(NaNFilter):
 			depth = random.randrange(depthmin, depthmax)
 			angle = random.randrange(0, 360)
 			shadowpaths.extend(DoShadow(thislayer, outlinedata, angle, depth, "paths"))
-			AddAllPathsToLayer(shadowpaths, thislayer)
+			AddPaths(shadowpaths, thislayer)
 
 		G.remove_overlap(thislayer)
 
@@ -59,7 +49,7 @@ class Vinyl(NaNFilter):
 
 		ClearPaths(thislayer)
 
-		AddAllPathsToLayer(blobs, thislayer)
+		AddPaths(blobs, thislayer)
 
 		G.remove_overlap(thislayer)
 

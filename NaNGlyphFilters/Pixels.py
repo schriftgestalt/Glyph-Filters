@@ -8,9 +8,9 @@ import random
 from noise import pnoise2
 from NaNGFNoise import noiseMap
 from NaNGlyphsEnvironment import GSGlyph, GSLayer, GSComponent
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
 from NaNGFGraphikshared import AllPathBounds, ClearPaths, ShapeWithinOutlines, drawRectangle
 from NaNFilter import NaNFilter
+from NaNGlyphsEnvironment import glyphsEnvironment as G
 
 
 class Pixel(NaNFilter):
@@ -18,22 +18,24 @@ class Pixel(NaNFilter):
 	gridsize = 30
 	minsize, maxsize = 30, 80
 
-	def processLayer(self, thislayer, params):
+	def setup(self):
+		self.components = self.Fill_Halftone()
 
+	def processLayer(self, thislayer, params):
 		offsetpaths = self.saveOffsetPaths(thislayer, 10, 10, removeOverlap=False)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata = setGlyphCoords(pathlist)
-		components = self.Fill_Halftone(thislayer)
+		outlinedata = G.outline_data_for_hit_testing(offsetpaths)
+
 		bounds = AllPathBounds(thislayer)
 		ClearPaths(thislayer)
-		self.HalftoneGrid(thislayer, outlinedata, bounds, components)
+		self.HalftoneGrid(thislayer, outlinedata, bounds, self.components)
 
-	def Fill_Halftone(self, thislayer):
+	def Fill_Halftone(self):
 
+		font = self.font
+		assert font
 		components = []
 
 		for size in range(0, 5):
-			font = self.font
 			shapename = "pixel" + str(size)
 			if font.glyphs[shapename]:
 				del font.glyphs[shapename]
@@ -49,9 +51,14 @@ class Pixel(NaNFilter):
 				ng.layers[mid] = thislayer
 				thislayer.width = 0
 				ox, oy = 0, 0
-				w, h = 40, 40
+				w, h = self.gridsize, self.gridsize
 				# grid = 10
 				unit = 5
+
+				if size == 4:
+					ns = drawRectangle(ox + ((w - unit) / 2), oy + ((h - unit) / 2), w, h)
+					thislayer.paths.append(ns)
+					continue
 
 				if size != 0:
 					gridx = 10 * size
@@ -80,7 +87,7 @@ class Pixel(NaNFilter):
 						thislayer.paths.append(ns)
 
 					switchx = False
-				components.append(ng)
+			components.append(ng)
 		return components
 
 	def HalftoneGrid(self, thislayer, outlinedata, bounds, components):
@@ -90,37 +97,31 @@ class Pixel(NaNFilter):
 		w = int(bounds[2])
 		h = int(bounds[3])
 
-		unitw = 40
-		unith = 40
+		unitw = self.gridsize
+		unith = self.gridsize
 
 		# noisescale = 0.001
 		seedx = random.uniform(0, 100000)
 		seedy = random.uniform(0, 100000)
 		# minsize, maxsize = -1, 6
-
 		for x in range(ox, ox + w, unitw):
 			for y in range(oy, oy + h, unith):
 				size = pnoise2((y + seedy), (x + seedx))
 				size = noiseMap(size, 0, 15)
 				size = int(abs(size)) + 1
+				if size < 0:
+					continue
 
-				if size > 4:
+				if size >= 5:
 					size = 5
-				if size > 0:
-					glyph = components[size - 1]
-					pixelcomponent = GSComponent(glyph)
-					adjust = unitw / 2 - 2
-					pixelcomponent.position = (x - adjust, y - adjust)
+				glyph = components[size - 1]
+				pixelcomponent = GSComponent(glyph)
+				adjust = unitw / 2 - 2
+				pixelcomponent.position = (x - adjust, y - adjust)
 
-				shapepath = []
-				shape = drawRectangle(x, y, unitw, unith)
-				shapepath.append(shape)
-				nshape = ConvertPathsToSkeleton(shapepath, 10)
-				nshape = setGlyphCoords(nshape)
-				finalshape = nshape[0][1]
-
+				finalshape = ((x + unitw, y + unith), (x, y + unith), (x, y), (x + unitw, y))
 				if ShapeWithinOutlines(finalshape, outlinedata):
-					if size == 5:
+					if size > 5:
 						thislayer.paths.append(drawRectangle(x, y, unitw, unith))
 					else:
 						thislayer.components.append(pixelcomponent)

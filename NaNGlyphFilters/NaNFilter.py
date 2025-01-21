@@ -2,7 +2,7 @@ import random
 # import time
 # import traceback
 from NaNGFConfig import NANGFSET, beginFilterNaN, beginGlyphNaN, endFilterNaN, endGlyphNaN, glyphSize
-from NaNGFGraphikshared import SnapToGrid
+from NaNGFGraphikshared import SnapToGrid, ClearPaths
 from NaNGFSpacePartition import IsoGridToTriangles, RandomiseIsoPoints, ReturnOutlineOverlappingTriangles, StickTrianglesToOutline, TrianglesListToPaths, makeIsometricGrid, returnTriangleTypes
 from NaNGlyphsEnvironment import OFFCURVE, GSLayer, Glyphs
 # from Foundation import NSClassFromString
@@ -33,7 +33,6 @@ class NaNFilter:
 		G.begin_undo(glyph)
 		try:
 			beginGlyphNaN(glyph)
-			newlayers = []
 			old_state = random.getstate()
 			for thislayer in list(glyph.layers):  # Don't use a proxy!
 				# Use the same random seed for each layer, else we're in trouble
@@ -45,15 +44,12 @@ class NaNFilter:
 				else:
 					params = None
 				self.processLayer(thislayer, params)
-				newlayers.append(thislayer)
 				G.end_layer_changes(thislayer)
-			# glyph.layers = newlayers
 			endGlyphNaN(glyph)
 		except:
 			import traceback
 			print(traceback.format_exc())
 		finally:
-			print("__end_undo")
 			G.end_undo(glyph)
 
 	def processLayer(self, layer, params):
@@ -66,14 +62,12 @@ class NaNFilter:
 		# glyph = Layer.parent
 		templayer = G.copy_layer(Layer)
 		templayer.name = "tempoutline"
-		currentglyph = Layer.parent
-		currentglyph.layers.append(templayer)
-		# tmplayer_id = templayer.layerId
 		self.doOffset(templayer, hoffset, voffset)
 		if removeOverlap:
 			G.remove_overlap(templayer)
 		# templayer.correctPathDirection() # doesn't seem to work when placed here
-		offsetpaths = templayer.paths
+		offsetpaths = list(templayer.paths)
+		ClearPaths(templayer)  # to trigger setting path.parent = None
 		return offsetpaths
 
 	def expandMonoline(self, Layer, noodleRadius):
@@ -88,7 +82,7 @@ class NaNFilter:
 		G.correct_path_direction(Layer)
 		return Layer.paths
 
-	def SortCollageSpace(self, thislayer, outlinedata, outlinedata2, gridsize, bounds, action, randomize=False, snap=False):
+	def SortCollageSpace(self, thislayer, outlinedata, gridsize, bounds, action, randomize=False, snap=False):
 		isogrid = makeIsometricGrid(bounds, gridsize)
 		if randomize:
 			isogrid = RandomiseIsoPoints(isogrid, gridsize)
@@ -129,9 +123,10 @@ class NaNFilter:
 	# https://github.com/mekkablue/Glyphs-Scripts/blob/master/Paths/Remove%20Short%20Segments.py
 	def removeSmallSegments(self, thisLayer, maxseg, keepshape):
 		for thisPath in thisLayer.paths:
-			for i in range(len(thisPath.nodes))[::-1]:
+			count = len(thisPath.nodes)
+			for i in range(count - 1, -1, -1):
 				thisNode = thisPath.nodes[i]
-				prevNode = thisNode.prevNode
+				prevNode = thisPath.nodes[(i % count) - 1]
 				if prevNode.type != OFFCURVE and thisNode.type != OFFCURVE:
 					xDistance = thisNode.position.x - prevNode.position.x
 					yDistance = thisNode.position.y - prevNode.position.y

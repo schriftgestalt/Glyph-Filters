@@ -7,10 +7,12 @@ class Glyphs2:
 	def clear_paths(cls, thislayer):
 		thislayer.paths = []
 
+	'''
 	@classmethod
 	def calculate_intersections(cls, layer, p1, p2, b):
 		from Foundation import NSMakePoint
 		layer.calculateIntersectionsStartPoint_endPoint_decompose_(NSMakePoint(*p1), NSMakePoint(*p2), True)
+	'''
 
 	@classmethod
 	def layer_bounds(cls, thislayer):
@@ -114,6 +116,20 @@ class Glyphs2:
 	def clean_up_paths(cls, thislayer):
 		thislayer.cleanUpPaths()
 
+	@classmethod
+	def outline_data_for_hit_testing(cls, gs_object):
+		if isinstance(gs_object, GSLayer):
+			return gs_object.bezierPath
+		if isinstance(gs_object, list):
+			from Cocoa import NSBezierPath
+			bezierPath = NSBezierPath.new()
+			for path in gs_object:
+				path_path = path.bezierPath
+				if path_path:
+					bezierPath.appendBezierPath_(path_path)
+			return bezierPath
+		assert False
+
 
 class Glyphs3(Glyphs2):
 	@classmethod
@@ -178,9 +194,11 @@ class GlyphsLib(Glyphs2):
 			print("Overlap removal failed. Carrying on anyway.", e)
 		return layer
 
+	'''
 	@classmethod
 	def calculate_intersections(cls, layer, p1, p2, b):
 		raise NotImplementedError
+	'''
 
 	@classmethod
 	def offset_layer(cls, layer, hoffset, voffset, position=0.5, make_stroke=False):
@@ -282,6 +300,15 @@ class GlyphsLib(Glyphs2):
 		h = int(bounds.size.height)
 		return x, y, w, h
 
+	@classmethod
+	def outline_data_for_hit_testing(cls, gs_object):
+		if isinstance(gs_object, GSLayer):
+			offsetpaths = self.saveOffsetPaths(thislayer, 0, 0, removeOverlap=True)
+		else:
+			offsetpaths = gs_object
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 20)
+		outlinedata = getListOfPoints(pathlist)
+		return outlinedata
 
 # Now, let's find out where we are.
 try:

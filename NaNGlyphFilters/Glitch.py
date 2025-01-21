@@ -4,14 +4,13 @@ __doc__ = """
 Glitch
 """
 
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, ShiftPath
+from NaNGFGraphikshared import AddPaths, AllPathBoundsFromPathList, ClearPaths, ShiftPath
 from NaNGFNoise import noiseMap
 from NaNGlyphsEnvironment import GSLayer
-from NaNFilter import NaNFilter
 import random
 from NaNGFNoise import pnoise1
 from NaNGlyphsEnvironment import glyphsEnvironment as G
-import copy
+from NaNFilter import NaNFilter
 
 
 class Glitch(NaNFilter):
@@ -29,14 +28,13 @@ class Glitch(NaNFilter):
 	def processLayer(self, thislayer, params):
 
 		maxshift = params["maxshift"]
-		G.remove_overlap(thislayer)
-		paths = copy.copy(thislayer.paths)
+		# G.remove_overlap(thislayer)
+		paths = list(thislayer.paths)
 		ClearPaths(thislayer)
 		slicedpaths = self.returnSlicedPaths(paths, self.sliceheight, thislayer)
-
 		self.ShiftPathsNoise(slicedpaths, maxshift)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(slicedpaths, thislayer)
+		AddPaths(slicedpaths, thislayer)
 		G.remove_overlap(thislayer)
 
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=False, remStrayPoints=True, remOpenPaths=True, keepshape=False)
@@ -44,7 +42,7 @@ class Glitch(NaNFilter):
 	def returnSlicedPaths(self, pathlist, sliceheight, thislayer):
 		slicedpaths = []
 		tmplayer = GSLayer()
-		AddAllPathsToLayer(pathlist, tmplayer)
+		AddPaths(pathlist, tmplayer)
 		bounds = AllPathBoundsFromPathList(pathlist, thislayer)
 		ox, oy, w, h = bounds[0], bounds[1], bounds[2], bounds[3]
 
@@ -63,7 +61,7 @@ class Glitch(NaNFilter):
 
 	def ShiftPathsNoise(self, pathlist, maxshift):
 
-		noisescale, seedx, seedy = 0.05, random.randrange(0, 100000), random.randrange(0, 100000)
+		noisescale, seedy = 0.05, random.randrange(0, 100000)
 		minsize, maxsize = 0, maxshift
 		n = 0
 		for p in pathlist:

@@ -5,10 +5,10 @@ Zebra
 """
 
 # from GlyphsApp import Glyphs
-from NaNGFGraphikshared import withinGlyphBlack, convertToFitpath, AllPathBoundsFromPathList, ClearPaths, ConvertPathlistDirection, AddAllPathsToLayer
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
+from NaNGFGraphikshared import withinGlyphBlack, convertToFitpath, AllPathBounds, ClearPaths, ConvertPathlistDirection, AddPaths
 from NaNFilter import NaNFilter
 import random
+from NaNGlyphsEnvironment import glyphsEnvironment as G
 # from NaNGFNoise import noiseMap
 
 try:
@@ -27,7 +27,7 @@ def pairs(iterable):
 # THE MAIN NOISE WAVE FUNCTION ACTION
 
 
-def NoiseWaves(thislayer, outlinedata, b, minsize, maxsize):
+def NoiseWaves(outlinedata, b, minsize, maxsize):
 
 	# noisescale = 0.002
 	yshift = maxsize / 4
@@ -78,14 +78,11 @@ class Zebra(NaNFilter):
 	minsize, maxsize = 1, 10
 
 	def processLayer(self, thislayer, params):
-		offsetpaths = self.saveOffsetPaths(thislayer, 0, 0, removeOverlap=True)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 40)
-		bounds = AllPathBoundsFromPathList(offsetpaths, layer=thislayer)
-		outlinedata = setGlyphCoords(pathlist)
+		bounds = AllPathBounds(thislayer)
 
-		wavepaths = NoiseWaves(
-			thislayer, outlinedata, bounds, self.minsize, self.maxsize
-		)
+		outlinedata = G.outline_data_for_hit_testing(thislayer)
+
+		wavepaths = NoiseWaves(outlinedata, bounds, self.minsize, self.maxsize)
 
 		ClearPaths(thislayer)
 		wavepaths = ConvertPathlistDirection(wavepaths, -1)
@@ -94,7 +91,7 @@ class Zebra(NaNFilter):
 		for path in wavepaths:
 			path.applyTransform((1, 0.0, 0.0, 1, 0, shifty))
 
-		AddAllPathsToLayer(wavepaths, thislayer)
+		AddPaths(wavepaths, thislayer)
 
 
 Zebra()

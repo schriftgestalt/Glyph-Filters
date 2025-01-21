@@ -8,7 +8,7 @@ from NaNGFGraphikshared import ChangeNodeStart, ClearPaths, MakeVector, Midpoint
 from NaNGlyphsEnvironment import GSLINE, GSOFFCURVE, GSCURVE, GSPath, GSNode
 from NaNFilter import NaNFilter
 from math import atan2, radians
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 import copy
 import random
@@ -27,16 +27,16 @@ class Puddles(NaNFilter):
 		offset1, offset2, offset3 = params["offset1"], params["offset2"], params["offset3"]
 
 		offsetpaths = self.saveOffsetPaths(thislayer, offset1, offset1, removeOverlap=False)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		outlinedata = getListOfPoints(pathlist)
 
 		offsetpaths = self.saveOffsetPaths(thislayer, offset2, offset2, removeOverlap=True)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		# outlinedata3 = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		# outlinedata3 = getListOfPoints(pathlist)
 
 		offsetpaths = self.saveOffsetPaths(thislayer, offset3, offset3, removeOverlap=True)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata4 = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		outlinedata4 = getListOfPoints(pathlist)
 
 		ClearPaths(thislayer)
 
@@ -119,8 +119,9 @@ def Toenail(thislayer, outlinedata, min_nail, max_nail, gap, thickness):
 			# variance = random.randrange(0, 10)
 			toenail = drawToenail(pt2, pt1, thickness)
 
-			maxwh = 40
-			if toenail.bounds.size.width > maxwh and toenail.bounds.size.heigh > maxwh:
+			minwh = 40
+			bounds = toenail.bounds
+			if bounds.size.width > minwh and bounds.size.height > minwh:
 				thislayer.paths.append(toenail)
 
 

@@ -5,33 +5,29 @@ __doc__ = """
 """
 
 from NaNGlyphsEnvironment import GSComponent
+from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGFGraphikshared import (
-	setGlyphCoords,
 	AllPathBounds,
 	MakeRectangles,
 	ClearPaths,
-	AddAllComponentsToLayer,
+	AddComponents,
 	CreateAllShapeComponents,
 	withinGlyphBlack,
 	point_inside_polygon,
 )
-import importlib
-import NaNGFAngularizzle
-importlib.reload(NaNGFAngularizzle)
-
-from NaNGFAngularizzle import ConvertPathsToSkeleton
 from NaNFilter import NaNFilter
 import random
 
 
 class EightiesFade(NaNFilter):
 	def processLayer(self, thislayer, params):
-		pathlist = ConvertPathsToSkeleton(thislayer.paths, 20)
-		print("__pathlist", type(pathlist))
-		outlinedata = setGlyphCoords(pathlist)
+
+		outlinedata = G.outline_data_for_hit_testing(thislayer)
 
 		try:
 			startrect = AllPathBounds(thislayer)
+			if startrect is None:
+				return
 			allrectangles = MakeRectangles([startrect], 5)
 			shape_components = CreateAllShapeComponents(self.font, 100, 100)
 
@@ -41,20 +37,16 @@ class EightiesFade(NaNFilter):
 				x, y, w, h = allrectangles[n]
 				tilecoords = [[x, y], [x, y + h], [x + w, y + h], [x + w, y]]
 				fadecomps.extend(
-					self.do80sFade(thislayer, outlinedata, tilecoords, shape_components)
+					self.do80sFade(startrect, outlinedata, tilecoords, shape_components)
 				)
 
 			ClearPaths(thislayer)
-			AddAllComponentsToLayer(fadecomps, thislayer)
+			AddComponents(fadecomps, thislayer)
 
 		except Exception as e:
 			print(("Layer (", thislayer.name, ") failed to execute.", e))
 
-	def do80sFade(self, thislayer, outlinedata, tilecoords, shape_components):
-		b = AllPathBounds(thislayer)
-
-		if b is None:
-			return []
+	def do80sFade(self, b, outlinedata, tilecoords, shape_components):
 
 		fadecomps = []
 		size = random.randrange(4, 15)

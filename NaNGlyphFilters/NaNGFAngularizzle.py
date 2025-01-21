@@ -3,7 +3,7 @@ import math
 
 
 __all__ = [
-	"setGlyphCoords", "ConvertPathsToSkeleton", "StripDetail", "RemoveDuplicatePts",
+	"getListOfPoints", "ConvertPathsToLineSegments", "StripDetail", "RemoveDuplicatePts",
 	"GetPoint", "CreatePointList", "CreateDistList", "FindPosInDistList", "ListToPath",
 	"PointToPointSteps", "ReturnNodesAlongPath", "Direction"
 ]
@@ -18,18 +18,18 @@ STEPNUM = 130
 STEPSIZE = 1.0 / STEPNUM  # !impt
 
 
-def setGlyphCoords(pathlist):
+def getListOfPoints(pathlist):
 
-	newshape = []
+	listOfPoints = []
 
 	for path in pathlist:
 		thispath = [[node.position.x, node.position.y] for node in path.nodes]
-		newshape.append([path.direction, thispath])
+		listOfPoints.append([path.direction, thispath])
 
-	return newshape
+	return listOfPoints
 
 
-def ConvertPathsToSkeleton(pathlist, segs):
+def ConvertPathsToLineSegments(pathlist, segs):
 	if len(pathlist) == 0:
 		return []
 
@@ -155,7 +155,6 @@ def ListToPath(ptlist, isopen):
 
 	if len(ptlist) <= 2:
 		return np
-
 	if isopen:
 		del ptlist[-1]
 
@@ -198,7 +197,6 @@ def PointToPointSteps(tp0, tp1, spacebetween):
 def ReturnNodesAlongPath(GlyphStartPaths, spacebetween):
 
 	allPaths = list()
-
 	for path in GlyphStartPaths:
 
 		pathTotalLength = 0

@@ -5,9 +5,9 @@ Maps
 """
 
 import random
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
 from NaNGFConfig import glyphSize
-from NaNGFGraphikshared import AddAllComponentsToLayer, AddAllPathsToLayer, AllPathBounds, ClearPaths, ConvertPathDirection, CreateLineComponent, Fill_Drawlines, RoundPaths, RoundPath, convertToFitpath
+from NaNGFGraphikshared import AddComponents, AddPaths, AllPathBounds, ClearPaths, ConvertPathDirection, CreateLineComponent, Fill_Drawlines, RoundPaths, RoundPath, convertToFitpath
 from NaNGFSpacePartition import BreakUpSpace
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGlyphsEnvironment import GSLayer
@@ -17,9 +17,9 @@ from NaNFilter import NaNFilter
 class Maps(NaNFilter):
 
 	params = {
-		"S": {"offset": 0, "gridsize": 10},
-		"M": {"offset": 4, "gridsize": 30},
-		"L": {"offset": 4, "gridsize": 40},
+		"S": {"gridsize": 10},
+		"M": {"gridsize": 30},
+		"L": {"gridsize": 40},
 	}
 
 	def setup(self):
@@ -39,17 +39,10 @@ class Maps(NaNFilter):
 			self.processLayerLarge(thislayer, params)
 
 	def processLayerLarge(self, thislayer, params):
-		offset, gridsize = params["offset"], params["gridsize"]
-		pathlist = ConvertPathsToSkeleton(thislayer.paths, 20)
-		outlinedata = setGlyphCoords(pathlist)
+		gridsize = params["gridsize"]
+		pathlist = ConvertPathsToLineSegments(thislayer.paths, 20)
+		outlinedata = getListOfPoints(pathlist)
 		bounds = AllPathBounds(thislayer)
-
-		offsetpaths = self.saveOffsetPaths(
-			thislayer, offset, offset, removeOverlap=True
-		)
-		pathlist2 = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata2 = setGlyphCoords(pathlist2)
-		# bounds2 = AllPathBoundsFromPathList(pathlist2)
 
 		ClearPaths(thislayer)
 
@@ -61,9 +54,9 @@ class Maps(NaNFilter):
 
 		for maxchain, shape in iterations:
 			newtris = self.SortCollageSpace(
-				thislayer, outlinedata, outlinedata2, gridsize, bounds, "stick"
+				thislayer, outlinedata, gridsize, bounds, "stick"
 			)
-			groups = BreakUpSpace(thislayer, outlinedata, newtris, gridsize, maxchain)
+			groups = BreakUpSpace(thislayer, newtris, gridsize, maxchain)
 			self.ApplyCollageGraphixxx(thislayer, groups, shape, self.linecomponents)
 
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=True, remStrayPoints=True, remOpenPaths=True, keepshape=False)
@@ -72,7 +65,7 @@ class Maps(NaNFilter):
 		G.remove_overlap(thislayer)
 		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(roundedpathlist, thislayer)
+		AddPaths(roundedpathlist, thislayer)
 
 	def ApplyCollageGraphixxx(self, layer, groups, drawtype, linecomponents):
 
@@ -102,7 +95,7 @@ class Maps(NaNFilter):
 						all_lines = Fill_Drawlines(
 							layer, roundedpath, drawtype, 20, linecomponents
 						)
-						AddAllComponentsToLayer(all_lines, layer)
+						AddComponents(all_lines, layer)
 
 				if drawtype == "blob":
 					# disallow small blobs

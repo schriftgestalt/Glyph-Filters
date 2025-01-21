@@ -6,15 +6,18 @@ Spray Paint
 
 import random
 from NaNFilter import NaNFilter
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import ClearPaths, MakeVector, RoundPath, drawSimplePath, isSizeBelowThreshold, convertToFitpath
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import ClearPaths, AddPaths, MakeVector, RoundPath, drawSimplePath, isSizeBelowThreshold, convertToFitpath
 from NaNGFNoise import noiseMap
-from NaNGlyphsEnvironment import glyphsEnvironment as G
 from math import atan2, radians
 
 
 class Spray(NaNFilter):
-	params = {"S": {"offset": -5}, "M": {"offset": -10}, "L": {"offset": -20}}
+	params = {
+		"S": {"offset": -5},
+		"M": {"offset": -10},
+		"L": {"offset": -20}
+	}
 
 	noisescale = 0.01
 	segwaylen = 5
@@ -22,23 +25,22 @@ class Spray(NaNFilter):
 
 	def processLayer(self, thislayer, params):
 		offsetpaths = self.saveOffsetPaths(thislayer, params["offset"], params["offset"], removeOverlap=False)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
 		ClearPaths(thislayer)
-
+		new_paths = []
 		for path in pathlist:
 			# only round shape if over certain size (for small forms)
 			if isSizeBelowThreshold(path, 120, 120):
 				structure = path
 			else:
 				structure = convertToFitpath(RoundPath(path, "nodes"), True)
-
-			outlinedata = setGlyphCoords(ConvertPathsToSkeleton([structure], 7))
+			outlinedata = getListOfPoints(ConvertPathsToLineSegments([structure], 7))
 
 			if not outlinedata:
 				continue
+			new_paths.extend([self.makePathSpiky(outlinedata[0][1])])
 
-			G.add_paths(thislayer, [self.makePathSpiky(outlinedata[0][1])])
+		AddPaths(new_paths, thislayer)
 
 	def makePathSpiky(self, structure):
 		nodelen = len(structure)

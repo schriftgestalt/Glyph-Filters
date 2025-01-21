@@ -4,10 +4,9 @@ __doc__ = """
 Marker Hatch
 """
 
-import copy
 import random
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, drawSimplePath, point_inside_polygon, retractHandles, RoundPaths
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import AddPaths, AllPathBounds, ClearPaths, drawSimplePath, point_inside_polygon, retractHandles, RoundPaths
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGFConfig import glyphSize
 from NaNFilter import NaNFilter
@@ -34,10 +33,10 @@ class Shatter(NaNFilter):
 			self.processLayerLarge(thislayer, params)
 
 	def processLayerSmall(self, thislayer, params):
-		paths = copy.copy(thislayer.paths)
+		paths = list(thislayer.paths)
 		rounded = RoundPaths(paths)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(rounded, thislayer)
+		AddPaths(rounded, thislayer)
 		# retractHandles(thislayer)
 		self.doclean(thislayer)
 
@@ -45,12 +44,11 @@ class Shatter(NaNFilter):
 
 		sliceheight = params["sliceheight"]
 		G.remove_overlap(thislayer)
-
 		bounds = AllPathBounds(thislayer)
-		thislayercopy = G.copy_layer(thislayer)
-		ClearPaths(thislayer)
 
-		spaths = self.returnSlicedPaths(thislayer, thislayercopy, sliceheight, bounds)
+		spaths = self.returnSlicedPaths(thislayer, sliceheight, bounds)
+
+		ClearPaths(thislayer)
 
 		n = 1
 		maxshift = 20
@@ -63,10 +61,10 @@ class Shatter(NaNFilter):
 				self.shufflePaths(row, d)
 			n += 1
 			rounded = RoundPaths(row)
+			AddPaths(rounded, thislayer)
 
-			AddAllPathsToLayer(rounded, thislayer)
-			retractHandles(thislayer)
-			self.doclean(thislayer)
+		retractHandles(thislayer)
+		self.doclean(thislayer)
 
 	def doclean(self, thislayer):
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=True, remStrayPoints=True, remOpenPaths=True, keepshape=False)
@@ -84,7 +82,7 @@ class Shatter(NaNFilter):
 				shifty   # y position
 			))
 
-	def returnSlicedPaths(self, thislayer, thislayercopy, sliceheight, bounds):
+	def returnSlicedPaths(self, thislayer, sliceheight, bounds):
 
 		slicedpaths = []
 		ox, oy, w, h = bounds[0], bounds[1], bounds[2], bounds[3]
@@ -98,7 +96,7 @@ class Shatter(NaNFilter):
 		while y < oy + h + dist:
 
 			rowpaths = []
-			tmplayer = G.copy_layer(thislayercopy)
+			tmplayer = G.copy_layer(thislayer)
 
 			shiftx = dist * cos(radians(self.angle))
 			shifty = dist * sin(radians(self.angle))
@@ -113,7 +111,7 @@ class Shatter(NaNFilter):
 			buff = 15  # increase top+bottom margin of container
 			slicepoly = [[cutax1 - 2, cutay1 - buff], [cutax2 + 2, cutay2 - buff], [cutbx2 + 2, cutby2 + buff], [cutbx1 - 2, cutby1 + buff]]
 			slicepath = drawSimplePath(slicepoly)
-			slicedata = setGlyphCoords(ConvertPathsToSkeleton([slicepath], 20))[0][1]
+			slicedata = getListOfPoints(ConvertPathsToLineSegments([slicepath], 20))[0][1]
 			# thislayer.paths.append(slicepath)
 
 			G.cut_layer(tmplayer, (cutax1, cutay1), (cutax2, cutay2))
@@ -121,12 +119,12 @@ class Shatter(NaNFilter):
 
 			for path in tmplayer.paths:
 				try:
-					pathdata = setGlyphCoords(ConvertPathsToSkeleton([path], 20))[0][1]
+					pathdata = getListOfPoints(ConvertPathsToLineSegments([path], 20))[0][1]
 					if self.WithinSlice(pathdata, slicedata):
 						rowpaths.append(path)
 				except:
 					pass
-
+			ClearPaths(tmplayer)  # to trigger path.parent = None
 			del tmplayer
 			sh = sliceheight * random.randrange(1, 20)
 			y += sh  # +sliceheight

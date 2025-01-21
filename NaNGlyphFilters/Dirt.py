@@ -4,8 +4,8 @@ __doc__ = """
 Dirt
 """
 
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import ClearPaths, AddAllPathsToLayer, retractHandles, ConvertPathlistDirection, removeOverlapPathlist, defineStartXY, withinGlyphBlack, drawSpeck
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import ClearPaths, AddPaths, retractHandles, ConvertPathlistDirection, removeOverlapPathlist, defineStartXY, withinGlyphBlack, drawSpeck
 from NaNGFNoise import NoiseOutline, noiseMap, pnoise1
 from NaNFilter import NaNFilter
 import random
@@ -21,25 +21,27 @@ class Dirt(NaNFilter):
 
 	def processLayer(self, thislayer, params):
 
-		outlinedata = setGlyphCoords(ConvertPathsToSkeleton(thislayer.paths, 20))
+		outlinedata = getListOfPoints(ConvertPathsToLineSegments(thislayer.paths, 20))
 
 		ClearPaths(thislayer)
 		noisepaths = NoiseOutline(thislayer, outlinedata, noisevars=[0.2, 0, 15])
-		AddAllPathsToLayer(noisepaths, thislayer)
+		AddPaths(noisepaths, thislayer)
 		retractHandles(thislayer)
 		G.remove_overlap(thislayer)
 
 		offsetpaths = self.saveOffsetPaths(
 			thislayer, params["offset"], params["offset"], removeOverlap=True
 		)
-		outlinedata2 = setGlyphCoords(ConvertPathsToSkeleton(offsetpaths, 4))
+
+		outlinedata2 = G.outline_data_for_hit_testing(offsetpaths)
 
 		dirt = self.AddDirt(thislayer, outlinedata2, params["walklen"])
 
 		if dirt is not None:
-			dirt = ConvertPathlistDirection(removeOverlapPathlist(dirt), 1)
-			AddAllPathsToLayer(dirt, thislayer)
-			G.remove_overlap(thislayer)
+			dirt = removeOverlapPathlist(dirt)
+			dirt = ConvertPathlistDirection(dirt, 1)
+			AddPaths(dirt, thislayer)
+			# G.remove_overlap(thislayer)
 
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=True, remStrayPoints=True, remOpenPaths=True, keepshape=False)
 

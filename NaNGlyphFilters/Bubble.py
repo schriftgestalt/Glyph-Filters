@@ -5,7 +5,7 @@ Bubble
 """
 
 from NaNGlyphsEnvironment import GSPath, GSNode, GSOFFCURVE, GSCURVE
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
 from NaNGFGraphikshared import ClearPaths, DistanceToNextBlack, Direction
 from NaNFilter import NaNFilter
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -26,8 +26,8 @@ class Bubble(NaNFilter):
 		offsetpaths = self.saveOffsetPaths(
 			thislayer, offset, offset, removeOverlap=False
 		)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		outlinedata = getListOfPoints(pathlist)
 		ClearPaths(thislayer)
 
 		for direction, structure in outlinedata:
@@ -60,7 +60,7 @@ class Bubble(NaNFilter):
 
 				# --- chech if there's space for a full bubble
 				beamdist = 200
-				searchblack = DistanceToNextBlack(thislayer, [x1, y1], [x2, y2], outlinedata, beamdist)
+				searchblack = DistanceToNextBlack([x1, y1], [x2, y2], outlinedata, beamdist)
 				if searchblack is not None and searchblack < beamdist:
 					pushdist *= 0.8
 

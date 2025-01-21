@@ -5,36 +5,41 @@ Burned
 """
 import random
 
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import ClearPaths, AddAllPathsToLayer, AllPathBounds, RoundPaths
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import ClearPaths, AddPaths, AllPathBounds, RoundPath, convertToFitpath
 from NaNFilter import NaNFilter
 from NaNGFSpacePartition import BreakUpSpace
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 
 
+def returnRoundedPaths(paths):
+	roundedpathlist = []
+	for p in paths:
+		roundedpath = RoundPath(p, "nodes")
+		try:
+			roundedpathlist.append(convertToFitpath(roundedpath, True))
+		except Exception as e:
+			print(("returnRoundedPaths failed:", e))
+	return roundedpathlist
+
+
 class Burn(NaNFilter):
 	params = {
-		"S": {"offset": 0, "gridsize": 40},
-		"M": {"offset": 4, "gridsize": 45},
-		"L": {"offset": 4, "gridsize": 50},
+		"S": {"gridsize": 40},
+		"M": {"gridsize": 45},
+		"L": {"gridsize": 50},
 	}
 
 	def processLayer(self, thislayer, params):
 		maxchain = random.randrange(200, 400)
-		outlinedata = setGlyphCoords(ConvertPathsToSkeleton(thislayer.paths, 20))
+		outlinedata = getListOfPoints(ConvertPathsToLineSegments(thislayer.paths, 20))
 		bounds = AllPathBounds(thislayer)
-
-		offsetpaths = self.saveOffsetPaths(
-			thislayer, params["offset"], params["offset"], removeOverlap=True
-		)
-		outlinedata2 = setGlyphCoords(ConvertPathsToSkeleton(offsetpaths, 4))
 
 		ClearPaths(thislayer)
 
 		newtris = self.SortCollageSpace(
 			thislayer,
 			outlinedata,
-			outlinedata2,
 			params["gridsize"],
 			bounds,
 			action="overlap",
@@ -42,17 +47,17 @@ class Burn(NaNFilter):
 		)
 		if not newtris:
 			raise ValueError("Layer '%s' had no 'inside'. Are the path directions correct?" % thislayer)
-		groups = BreakUpSpace(
-			thislayer, outlinedata, newtris, params["gridsize"], maxchain
-		)
+
+		groups = BreakUpSpace(thislayer, newtris, params["gridsize"], maxchain)
+
 		for g in groups:
 			if len(g) > 2:
 				G.add_paths(thislayer, g)
 
 		G.remove_overlap(thislayer)
-		roundedpathlist = RoundPaths(thislayer.paths)
+		roundedpathlist = returnRoundedPaths(thislayer.paths)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(roundedpathlist, thislayer)
+		AddPaths(roundedpathlist, thislayer)
 		self.CleanOutlines(
 			thislayer,
 			remSmallPaths=True,

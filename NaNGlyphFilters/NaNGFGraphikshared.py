@@ -1,9 +1,9 @@
 
 import random
 import math
-# from Foundation import NSMakePoint
+from Foundation import NSMakePoint
 
-from NaNGFAngularizzle import (setGlyphCoords, Direction, ConvertPathsToSkeleton)
+from NaNGFAngularizzle import (getListOfPoints, Direction, ConvertPathsToLineSegments)
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGlyphsEnvironment import GSPath, GSGlyph, GSLayer, GSNode, GSLINE, GSOFFCURVE, GSCURVE, GSComponent
 from NaNGlyphsEnvironment import Glyphs3
@@ -16,7 +16,6 @@ __all__ = [
 	"ShiftPath",
 	"ChangeNodeStart",
 	"withinGlyphBlack",
-	"withinLayerBlack",
 	"operateOnBlackAtInterval",
 	"point_inside_polygon_faster",
 	"point_inside_polygon",
@@ -50,8 +49,8 @@ __all__ = [
 	"ShapeWithinOutlines",
 	"DistanceToNextBlack",
 	"isSizeBelowThreshold",
-	"AddAllComponentsToLayer",
-	"AddAllPathsToLayer",
+	"AddComponents",
+	"AddPaths",
 	"ConvertPathDirection",
 	"ConvertPathlistDirection",
 	"ContainsPaths",
@@ -131,7 +130,8 @@ def ChangeNodeStart(nodes):
 
 
 def withinGlyphBlack(x, y, glyph):
-
+	if not isinstance(glyph, list):
+		return glyph.containsPoint_(NSMakePoint(x, y))
 	# if len(glyph) == 0 : print "EMPTY GLYPH"
 
 	paths_pos, paths_neg = [], []
@@ -161,24 +161,16 @@ def withinGlyphBlack(x, y, glyph):
 		return False  # not
 
 
-def withinLayerBlack(layer, x, y):
-	if not layer.bounds:
-		return
-	definitelyOutside = (layer.bounds.origin.x - 1, y)
-	pt = (x, y)
-	intersections = G.calculate_intersections(layer, definitelyOutside, pt, True)
-	return (len(intersections) % 2) == 1
-
-
 def operateOnBlackAtInterval(layer, func, step_x, step_y=None):
 	if step_y is None:
 		step_y = step_x
 	b = AllPathBounds(layer)
+	outlinedata = G.outline_data_for_hit_testing(layer)
 	ox, oy, w, h = int(b[0]) + 1, b[1] + 1, b[2], b[3]
 	results = []
 	for y in range(oy, oy + h, step_y):
 		for x in range(ox, ox + w, step_x):
-			if not withinLayerBlack(layer, x, y):
+			if not withinGlyphBlack(x, y, outlinedata):
 				continue
 			result = func(x, y, layer)
 			if result is not None:
@@ -265,7 +257,7 @@ def AllPathBoundsFromPathList(paths, layer=None):
 		if layer is None:
 			raise ValueError("Need to pass a layer to AllPathBoundsFromPathList in Glyphs 3")
 		templayer.parent = layer.parent
-	AddAllPathsToLayer(paths, templayer)
+	AddPaths(paths, templayer)
 	bounds = AllPathBounds(templayer)
 	del templayer
 	return bounds
@@ -293,7 +285,7 @@ def RoundPaths(paths, returntype="nodes"):
 
 def RoundPath(path, returntype):
 
-	outlinedata = setGlyphCoords(ConvertPathsToSkeleton([path], 2))[0][1]
+	outlinedata = getListOfPoints(ConvertPathsToLineSegments([path], 2))[0][1]
 	new_outline = outlinedata
 	nl = []
 
@@ -326,7 +318,7 @@ def RoundPath(path, returntype):
 		else:
 			segmentsize = 3
 
-		outlinedata = setGlyphCoords(ConvertPathsToSkeleton([drawSimplePath(nl)], segmentsize))
+		outlinedata = getListOfPoints(ConvertPathsToLineSegments([drawSimplePath(nl)], segmentsize))
 
 		try:
 			new_outline = outlinedata[0][1]
@@ -531,10 +523,18 @@ def drawRectangle(nx, ny, w, h):
 
 def drawTriangle(nx, ny, w, h):
 	return drawSimplePath([
-		[nx - (w / 2), ny - (h / 2)],
-		[nx + (w / 2), ny - (h / 2)],
-		[nx, ny + (h / 2)]
+		(nx - (w / 2), ny - (h / 2)),
+		(nx + (w / 2), ny - (h / 2)),
+		(nx, ny + (h / 2))
 	], correctDirection=True)
+
+
+def drawTrianglePoints(nx, ny, w, h):
+	return (
+		(nx - (w / 2), ny - (h / 2)),
+		(nx + (w / 2), ny - (h / 2)),
+		(nx, ny + (h / 2))
+	)
 
 
 def drawSimplePath(nodes, correctDirection=False, closed=True):
@@ -604,7 +604,7 @@ def Fill_Drawlines(thislayer, path, direction, gap, linecomponents):
 	w = int(bounds.size.width)
 	h = int(bounds.size.height)
 
-	outlinedata = setGlyphCoords(ConvertPathsToSkeleton([path], 10))
+	outlinedata = getListOfPoints(ConvertPathsToLineSegments([path], 10))
 	if len(outlinedata) == 0:
 		return None
 
@@ -803,7 +803,7 @@ def ShapeWithinOutlines(shape, glyph):
 	return True
 
 
-def DistanceToNextBlack(thislayer, p1, p2, outlinedata, searchlimit):
+def DistanceToNextBlack(p1, p2, outlinedata, searchlimit):
 	x1, y1 = p1
 	x2, y2 = p2
 	mid = Midpoint(p1, p2)
@@ -821,7 +821,6 @@ def DistanceToNextBlack(thislayer, p1, p2, outlinedata, searchlimit):
 		if withinGlyphBlack(newx, newy, outlinedata):
 			# return distance([midx, midy], [newx, newy])
 			return distance(mid, [newx, newy])
-			break
 
 	return None
 
@@ -831,14 +830,14 @@ def isSizeBelowThreshold(thing, maxw, maxh):
 	return bounds.size.width < maxw and bounds.size.height < maxh
 
 
-def AddAllComponentsToLayer(components, thislayer):
+def AddComponents(components, thislayer):
 	# try:
 	G.add_components(thislayer, components)
 	# except Exception as e:
 	# 	print("Couldn't add components to layer", thislayer, e)
 
 
-def AddAllPathsToLayer(paths, thislayer):
+def AddPaths(paths, thislayer):
 	# try:
 	G.add_paths(thislayer, paths)
 	# except Exception as e:
@@ -1055,7 +1054,8 @@ def removeOverlapPathlist(paths):
 	layer = GSLayer()
 	G.add_paths(layer, paths)
 	layer = G.remove_overlap(layer)
-	newpaths = layer.paths
+	newpaths = list(layer.paths)
+	ClearPaths(layer)
 	del layer
 	return newpaths
 

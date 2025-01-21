@@ -5,7 +5,7 @@ Wet Paint
 """
 
 from NaNFilter import NaNFilter
-from NaNGFAngularizzle import ConvertPathsToSkeleton, Direction, setGlyphCoords
+from NaNGFAngularizzle import ConvertPathsToLineSegments, Direction, getListOfPoints
 from NaNGFGraphikshared import DistanceToNextBlack, convertToFitpath
 from NaNGFNoise import noiseMap
 from NaNGlyphsEnvironment import glyphsEnvironment as G
@@ -77,7 +77,7 @@ class Drip(NaNFilter):
 					if n < index_end:
 						x2, y2 = structure[n + 1]
 
-						searchblack = DistanceToNextBlack(thislayer, [x, y], [x2, y2], outlinedata, searchlimit=200)
+						searchblack = DistanceToNextBlack((x, y), (x2, y2), outlinedata, searchlimit=200)
 						# print searchblack
 
 						if searchblack is not None and searchblack < 200:
@@ -96,8 +96,8 @@ class Drip(NaNFilter):
 
 	def processLayer(self, thislayer, params):
 		for n in range(0, params["iterations"]):
-			pathlist = ConvertPathsToSkeleton(thislayer.paths, 4)  # small seg size = quicker
-			outlinedata = setGlyphCoords(pathlist)
+			pathlist = ConvertPathsToLineSegments(thislayer.paths, 10)  # small seg size = slower
+			outlinedata = getListOfPoints(pathlist)
 			indices = self.getDrippableSegments(outlinedata)
 
 			# Modifies outlinedata

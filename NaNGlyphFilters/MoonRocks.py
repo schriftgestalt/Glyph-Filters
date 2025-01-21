@@ -4,8 +4,8 @@ __doc__ = """
 Moon Rocks
 """
 
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, ConvertPathlistDirection
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import AddPaths, ConvertPathlistDirection
 from NaNFilter import NaNFilter
 from NaNCommonFilters import moonrocks
 
@@ -21,10 +21,10 @@ class MoonRocks(NaNFilter):
 		offsetpaths = self.saveOffsetPaths(
 			thislayer, params["offset"], params["offset"], removeOverlap=False
 		)
-		outlinedata = setGlyphCoords(ConvertPathsToSkeleton(offsetpaths, 20))
+		outlinedata = getListOfPoints(ConvertPathsToLineSegments(offsetpaths, 20))
 		moonrockpaths = moonrocks(thislayer, outlinedata, params["iterations"], shapetype="blob", maxgap=8)
 		ConvertPathlistDirection(moonrockpaths, 1)
-		AddAllPathsToLayer(moonrockpaths, thislayer)
+		AddPaths(moonrockpaths, thislayer)
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=True, remStrayPoints=True, remOpenPaths=True, keepshape=False)
 
 

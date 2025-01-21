@@ -182,7 +182,7 @@ def TrianglesListToPaths(triangle_list):
 	return newtris
 
 
-def BreakUpSpace(thislayer, outlinedata, looptriangles, gridsize, maxchain):
+def BreakUpSpace(thislayer, looptriangles, gridsize, maxchain):
 
 	groups = []
 	group = []

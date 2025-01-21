@@ -6,12 +6,11 @@ SeaCamouflage
 
 import math
 from NaNFilter import NaNFilter
-import copy
 import random
 from noise import snoise2
 from math import sin, cos, degrees, radians
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllPathsToLayer, AllPathBounds, ClearPaths, ShiftAllPaths, point_inside_polygon, RoundPaths
+from NaNGFAngularizzle import ConvertPathsToLineSegments, getListOfPoints
+from NaNGFGraphikshared import AddPaths, AllPathBounds, ClearPaths, ShiftAllPaths, point_inside_polygon, RoundPaths
 from NaNGFNoise import noiseMap
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 from NaNGlyphsEnvironment import GSPath, GSNode, GSLINE
@@ -29,23 +28,24 @@ class SeaCamouflage(NaNFilter):
 		iterations = params["iterations"]
 		self.SliceGlyph(thislayer, iterations)
 		ShiftAllPaths(thislayer.paths, 10, "xy")
-		stripepaths = copy.deepcopy(thislayer.paths)
+		stripepaths = list(thislayer.paths)
 		ClearPaths(thislayer)
 		stripepaths = returnAllStripePaths(stripepaths)
 
+		newPaths = []
 		for stripes in stripepaths:
 			if stripes is not None:
 				for stripe in stripes:
-					thislayer.paths.append(stripe)
 					stripe.applyTransform((1, 0, 0, 1, 0, -30))
-
+					newPaths.append(stripe)
+		AddPaths(newPaths, thislayer)
 		self.CleanOutlines(thislayer, remSmallPaths=True, remSmallSegments=False, remStrayPoints=True, remOpenPaths=True, keepshape=False)
 
 	def processLayerSmall(self, thislayer):
 		G.remove_overlap(thislayer)
 		roundedpathlist = RoundPaths(thislayer.paths)
 		ClearPaths(thislayer)
-		AddAllPathsToLayer(roundedpathlist, thislayer)
+		AddPaths(roundedpathlist, thislayer)
 
 	def SliceGlyph(self, thislayer, iterations):
 
@@ -92,7 +92,7 @@ def StripePath(path):
 		# x_max, y_max = 10, 10
 		minsize, maxsize = 20, 60
 		seedx, seedy = random.randrange(0, 100000), random.randrange(0, 100000)
-		outline = setGlyphCoords(ConvertPathsToSkeleton([path], 10))[0][1]
+		outline = getListOfPoints(ConvertPathsToLineSegments([path], 10))[0][1]
 		wavepaths, waves = [], []
 
 		if random.choice([1, 0]) == 0:
@@ -110,7 +110,7 @@ def StripePath(path):
 			direction = 1
 			startx, starty = tx, ty + th
 			endx = 1000
-			stepy, stepx = minstepy * -1, minstepx
+			stepx = minstepx
 			theta = 180 - 90 - (degrees(angle))
 			hypot = tw / sin(angle)
 			oppos = sin(radians(theta)) * hypot
@@ -124,7 +124,7 @@ def StripePath(path):
 			direction = 0
 			startx, starty = tx + tw, ty + th
 			endx = -1000
-			stepy, stepx = minstepy, minstepx * -1
+			stepx = minstepx * -1
 			a2 = 180 - (degrees(angle))
 			theta = 180 - 90 - (a2)
 			hypot = tw / sin(radians(a2))
@@ -134,8 +134,8 @@ def StripePath(path):
 			pushy = stepx * sin(angle) * -1
 			starty = ty + th + oppos
 
-		break_counter_y, break_counter_x = 0, 0
-		loop_counter, loopmax = 0, 12000
+		break_counter_x = 0
+		loop_counter = 0
 		y = starty
 
 		searchlen = hypot + hypot2

@@ -5,17 +5,17 @@ Broken Fax
 """
 
 from NaNGFGraphikshared import (
-	AddAllPathsToLayer,
+	AddPaths,
 	ShapeWithinOutlines,
 	drawSimplePath,
 	ConvertPathlistDirection,
-	setGlyphCoords,
+	getListOfPoints,
 	AllPathBounds,
 	ClearPaths,
 	point_inside_polygon,
 	drawRectangle,
 )
-from NaNGFAngularizzle import ConvertPathsToSkeleton
+from NaNGFAngularizzle import ConvertPathsToLineSegments
 from NaNFilter import NaNFilter
 from NaNGlyphsEnvironment import glyphsEnvironment as G
 import random
@@ -30,8 +30,8 @@ class BrokenFax(NaNFilter):
 
 	def processLayer(self, thislayer, params):
 		G.remove_overlap(thislayer)
-		pathlist = ConvertPathsToSkeleton(thislayer.paths, params["stepsize"])
-		outlinedata = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(thislayer.paths, params["stepsize"])
+		outlinedata = getListOfPoints(pathlist)
 		originx = G.layer_bounds(thislayer)[0]
 		ClearPaths(thislayer)
 
@@ -66,19 +66,19 @@ class BrokenFax(NaNFilter):
 
 		angularpaths = [drawSimplePath(path) for path in allpaths]
 		if angularpaths:
-			AddAllPathsToLayer(angularpaths, thislayer)
+			AddPaths(angularpaths, thislayer)
 		G.remove_overlap(thislayer)
 
 		offsetpaths = self.saveOffsetPaths(
 			thislayer, offset, offset, removeOverlap=True
 		)
-		pathlist = ConvertPathsToSkeleton(offsetpaths, 4)
-		outlinedata = setGlyphCoords(pathlist)
+		pathlist = ConvertPathsToLineSegments(offsetpaths, 4)
+		outlinedata = getListOfPoints(pathlist)
 
 		glitchpaths = self.Shapefit(thislayer, outlinedata)
 		if glitchpaths:
 			glitchpaths = ConvertPathlistDirection(glitchpaths, 1)
-			AddAllPathsToLayer(glitchpaths, thislayer)
+			AddPaths(glitchpaths, thislayer)
 
 		self.CleanOutlines(
 			thislayer,
@@ -103,8 +103,8 @@ class BrokenFax(NaNFilter):
 						shapepath = []
 						shape = drawRectangle(x, y, shapesize, shapesize)
 						shapepath.append(shape)
-						nshape = ConvertPathsToSkeleton(shapepath, 10)
-						nshape = setGlyphCoords(nshape)
+						nshape = ConvertPathsToLineSegments(shapepath, 10)
+						nshape = getListOfPoints(nshape)
 						finalshape = nshape[0][1]
 						rect = self.returnSquareShape(x, y, shapesize, shapesize)
 

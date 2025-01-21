@@ -5,15 +5,15 @@ Lines
 """
 
 from NaNFilter import NaNFilter
-from NaNGFAngularizzle import ConvertPathsToSkeleton, setGlyphCoords
-from NaNGFGraphikshared import AddAllComponentsToLayer, AllPathBounds, ClearPaths, CreateLineComponent, MakeRectangles, SnapToGrid, point_inside_polygon_faster, returnLineComponent, withinGlyphBlack
+from NaNGFGraphikshared import AddComponents, AllPathBounds, ClearPaths, CreateLineComponent, MakeRectangles, SnapToGrid, point_inside_polygon_faster, returnLineComponent, withinGlyphBlack
+from NaNGlyphsEnvironment import glyphsEnvironment as G
 
 
 class Lines(NaNFilter):
 	params = {
-		"S": {"offset": -5, "iterations": 50},
-		"M": {"offset": -15, "iterations": 400},
-		"L": {"offset": -20, "iterations": 420},
+		"S": {"iterations": 50},
+		"M": {"iterations": 400},
+		"L": {"iterations": 420},
 	}
 
 	strokesize = 8
@@ -28,7 +28,7 @@ class Lines(NaNFilter):
 
 	def processLayer(self, thislayer, params):
 
-		outlinedata = setGlyphCoords(ConvertPathsToSkeleton(thislayer.paths, 40))
+		outlinedata = G.outline_data_for_hit_testing(thislayer)
 
 		try:
 			allrectangles = MakeRectangles([AllPathBounds(thislayer)], 5)
@@ -46,7 +46,7 @@ class Lines(NaNFilter):
 				)
 
 			ClearPaths(thislayer)
-			AddAllComponentsToLayer(linecomps, thislayer)
+			AddComponents(linecomps, thislayer)
 
 		except Exception as e:
 			print("Glyph (", thislayer.name, ") failed to execute:", e)
